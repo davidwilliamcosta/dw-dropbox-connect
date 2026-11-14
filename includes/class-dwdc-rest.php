@@ -198,7 +198,11 @@ class DWDC_Rest {
             header( 'Content-Length: ' . (string) filesize( $file ) );
             header( 'Cache-Control: private, max-age=86400' );
             header( 'X-Content-Type-Options: nosniff' );
-            readfile( $file );
+            $image = file_get_contents( $file );
+            if ( is_string( $image ) ) {
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- validated JPEG bytes, not HTML.
+                echo $image;
+            }
             exit;
         }, 10, 2 );
         return $response;
@@ -212,7 +216,6 @@ class DWDC_Rest {
         try {
             return $this->import_file_body( $request );
         } catch ( Throwable $error ) {
-            error_log( 'dwdc import: ' . $error->getMessage() );
             return new WP_Error( 'dwdc_import', __( 'A importação falhou.', 'dw-dropbox-connect' ), array( 'status' => 500 ) );
         }
     }

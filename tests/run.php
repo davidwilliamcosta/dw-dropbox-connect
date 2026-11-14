@@ -1,10 +1,15 @@
 <?php
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.NamingConventions.PrefixAllGlobals -- CLI runner, not a WordPress screen.
+
 /**
  * Testes das partes puras do plugin. Não carregam o WordPress.
  */
 
-if ( PHP_SAPI !== 'cli' ) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+    if ( PHP_SAPI !== 'cli' ) {
+        exit;
+    }
+    define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 }
 
 define( 'DWDC_TESTING', true );

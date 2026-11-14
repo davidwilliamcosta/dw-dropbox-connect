@@ -121,8 +121,10 @@ class DWDC_Importer {
             AND p.post_type = 'attachment'
             AND p.post_status IN ('inherit', 'private')
             AND LOWER(SUBSTRING_INDEX(pm.meta_value, '/', -1)) IN ($placeholders)";
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- the placeholder list is generated to match $keys.
         $prepared = $wpdb->prepare( $sql, ...$keys );
-        $rows     = is_string( $prepared ) ? $wpdb->get_results( $prepared ) : array();
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $prepared is the result of $wpdb->prepare(); the lookup must see attachments just imported.
+        $rows = is_string( $prepared ) ? $wpdb->get_results( $prepared ) : array();
         $found    = array();
         if ( ! is_array( $rows ) ) {
             return $found;
@@ -165,7 +167,7 @@ class DWDC_Importer {
      */
     private function remove( $tmp ) {
         if ( is_string( $tmp ) && is_file( $tmp ) ) {
-            unlink( $tmp );
+            wp_delete_file( $tmp );
         }
     }
 }

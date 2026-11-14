@@ -35,7 +35,6 @@ class DWDC_Plugin {
         new DWDC_Rest( $this->oauth );
         $this->oauth->migrate_legacy_options();
 
-        add_action( 'init', array( $this, 'load_textdomain' ) );
         add_action( 'admin_menu', array( $this, 'admin_menu' ) );
         add_action( 'in_admin_header', array( $this, 'suppress_external_admin_notices' ), 999 );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin' ) );
@@ -58,10 +57,6 @@ class DWDC_Plugin {
             '',
             array( 'back_link' => true )
         );
-    }
-
-    public function load_textdomain() {
-        load_plugin_textdomain( 'dw-dropbox-connect', false, dirname( plugin_basename( DWDC_FILE ) ) . '/languages' );
     }
 
     public function admin_menu() {
@@ -111,7 +106,7 @@ class DWDC_Plugin {
         $this->assert_admin();
         check_admin_referer( 'dwdc_save' );
         $key = isset( $_POST['app_key'] ) ? sanitize_text_field( wp_unslash( $_POST['app_key'] ) ) : '';
-        $secret = isset( $_POST['app_secret'] ) ? trim( (string) wp_unslash( $_POST['app_secret'] ) ) : '';
+        $secret = isset( $_POST['app_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['app_secret'] ) ) : '';
         $saved = $this->oauth->save_credentials( $key, $secret );
         if ( is_wp_error( $saved ) ) {
             $this->redirect_notice( 'error', $saved->get_error_message(), 'credenciais' );
@@ -131,6 +126,7 @@ class DWDC_Plugin {
 
     public function callback() {
         $this->assert_admin();
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Dropbox returns here; the one-time OAuth state is checked in handle_callback().
         $result = $this->oauth->handle_callback( wp_unslash( $_GET ) );
         if ( is_wp_error( $result ) ) {
             $this->redirect_notice( 'error', $result->get_error_message() );
@@ -294,7 +290,15 @@ class DWDC_Plugin {
         if ( $scheme !== 'https' || ! in_array( $host, array( 'www.dropbox.com', 'dropbox.com' ), true ) ) {
             $this->redirect_notice( 'error', __( 'A URL de autorização do Dropbox é inválida.', 'dw-dropbox-connect' ) );
         }
-        wp_redirect( $url );
+        add_filter(
+            'allowed_redirect_hosts',
+            static function ( $hosts ) {
+                $hosts[] = 'www.dropbox.com';
+                $hosts[] = 'dropbox.com';
+                return $hosts;
+            }
+        );
+        wp_safe_redirect( $url );
         exit;
     }
 

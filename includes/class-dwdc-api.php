@@ -221,11 +221,12 @@ class DWDC_Api {
         }
         $token = $this->oauth->access_token();
         if ( is_wp_error( $token ) ) {
-            unlink( $tmp );
+            wp_delete_file( $tmp );
             return $token;
         }
         if ( function_exists( 'set_time_limit' ) ) {
-            @set_time_limit( 300 );
+            // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- a large Dropbox download can outlast the default PHP timer.
+            set_time_limit( 300 );
         }
         $response = wp_remote_post(
             'https://content.dropboxapi.com/2/files/download',
@@ -240,14 +241,14 @@ class DWDC_Api {
             )
         );
         if ( is_wp_error( $response ) ) {
-            unlink( $tmp );
+            wp_delete_file( $tmp );
             return new WP_Error( 'dwdc_download', __( 'O download do Dropbox falhou.', 'dw-dropbox-connect' ), array( 'status' => 502 ) );
         }
         $status = (int) wp_remote_retrieve_response_code( $response );
         $actual = is_file( $tmp ) ? (int) filesize( $tmp ) : 0;
         if ( $status !== 200 || ( $max > 0 && $actual > $max ) ) {
             if ( is_file( $tmp ) ) {
-                unlink( $tmp );
+                wp_delete_file( $tmp );
             }
             return new WP_Error( 'dwdc_download', __( 'O download do Dropbox falhou.', 'dw-dropbox-connect' ), array( 'status' => $status === 200 ? 413 : 502 ) );
         }
@@ -298,6 +299,7 @@ class DWDC_Api {
             $wpdb->esc_like( '_transient_dwdc_search_' ) . '%',
             $wpdb->esc_like( '_transient_timeout_dwdc_search_' ) . '%',
         );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bulk removal of this plugin's list and search transients.
         $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
@@ -315,7 +317,7 @@ class DWDC_Api {
                     if ( preg_match( '/^[a-f0-9]{64}\.jpg$/', $item ) ) {
                         $file = $dir . '/' . $item;
                         if ( is_file( $file ) ) {
-                            unlink( $file );
+                            wp_delete_file( $file );
                         }
                     }
                 }
@@ -329,6 +331,7 @@ class DWDC_Api {
      * @param int                 $size
      * @return array<string,mixed>|WP_Error
      */
+    // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- chunked upload reads 8 MB at a time; loading the whole file would exhaust memory.
     private function upload_session( array $commit, $local_file, $size ) {
         $handle = fopen( $local_file, 'rb' );
         if ( ! is_resource( $handle ) ) {
@@ -400,6 +403,7 @@ class DWDC_Api {
         }
         return $result;
     }
+    // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
     /**
      * @param string              $endpoint
@@ -559,7 +563,7 @@ class DWDC_Api {
             }
             $file = $dir . '/' . $item;
             if ( is_file( $file ) && filemtime( $file ) !== false && filemtime( $file ) < $cutoff ) {
-                unlink( $file );
+                wp_delete_file( $file );
             }
         }
     }

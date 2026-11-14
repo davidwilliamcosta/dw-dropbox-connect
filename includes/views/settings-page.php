@@ -25,6 +25,7 @@ $dwdc_tabs = array(
     'credenciais' => __( 'Credenciais', 'dw-dropbox-connect' ),
     'app'         => __( 'App do Dropbox', 'dw-dropbox-connect' ),
 );
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab, sanitized and allowlisted below.
 $dwdc_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'conexao';
 if ( ! isset( $dwdc_tabs[ $dwdc_tab ] ) ) {
     $dwdc_tab = 'conexao';
@@ -38,7 +39,10 @@ if ( ! isset( $dwdc_tabs[ $dwdc_tab ] ) ) {
             <strong><?php esc_html_e( 'DW Dropbox Connect', 'dw-dropbox-connect' ); ?></strong>
             <span class="dwdc-brand-description"><?php esc_html_e( 'Conta pessoal do Dropbox na aba do seletor de mídia, com importação para a Biblioteca.', 'dw-dropbox-connect' ); ?></span>
         </div>
-        <span class="dwdc-brand-version"><?php echo esc_html( sprintf( __( 'Versão %s', 'dw-dropbox-connect' ), DWDC_VERSION ) ); ?></span>
+        <span class="dwdc-brand-version"><?php
+            /* translators: %s: plugin version number. */
+            echo esc_html( sprintf( __( 'Versão %s', 'dw-dropbox-connect' ), DWDC_VERSION ) );
+        ?></span>
     </div>
 
     <nav class="dwdc-nav" aria-label="<?php esc_attr_e( 'Seções do Dropbox', 'dw-dropbox-connect' ); ?>">

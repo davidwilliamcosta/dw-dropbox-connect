@@ -5,7 +5,7 @@
  * @package DW_Dropbox_Connect
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'DWDC_TESTING' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
