@@ -16,6 +16,7 @@ define( 'DWDC_TESTING', true );
 
 require dirname( __DIR__ ) . '/includes/class-dwdc-crypto.php';
 require dirname( __DIR__ ) . '/includes/class-dwdc-normalizer.php';
+require dirname( __DIR__ ) . '/includes/class-dwdc-updater.php';
 
 $failed = 0;
 
@@ -105,6 +106,25 @@ $legacy_cipher = openssl_encrypt( 'legado', 'AES-256-CBC', $key, OPENSSL_RAW_DAT
 dwdc_assert( 'formato antigo ainda abre', DWDC_Crypto::decrypt( base64_encode( $legacy_iv . $legacy_cipher ), $key ) === 'legado' );
 dwdc_assert( 'lixo não decifra', DWDC_Crypto::decrypt( 'nao-e-base64', $key ) === '' );
 dwdc_assert( 'chave curta não cifra', DWDC_Crypto::encrypt( 'x', 'curta' ) === false );
+
+$release_url = 'https://github.com/davidwilliamcosta/dw-dropbox-connect/releases/download/v0.1.0/dw-dropbox-connect.zip';
+dwdc_assert( 'tag vira versão', DWDC_Updater::version_from_tag( 'v0.1.0' ) === '0.1.0' );
+dwdc_assert( 'tag inválida', DWDC_Updater::version_from_tag( 'latest' ) === '' );
+dwdc_assert( 'zip da release é aceito', DWDC_Updater::trusted_package( $release_url ) );
+dwdc_assert( 'zip de outro repositório é recusado', ! DWDC_Updater::trusted_package( 'https://github.com/other/repo/releases/download/v0.1.0/dw-dropbox-connect.zip' ) );
+$parsed = DWDC_Updater::parse_release( array(
+    'tag_name' => 'v0.2.0',
+    'html_url' => 'https://github.com/davidwilliamcosta/dw-dropbox-connect/releases/tag/v0.2.0',
+    'body'     => 'Notas',
+    'assets'   => array(
+        array(
+            'name'                 => 'dw-dropbox-connect.zip',
+            'browser_download_url' => 'https://github.com/davidwilliamcosta/dw-dropbox-connect/releases/download/v0.2.0/dw-dropbox-connect.zip',
+        ),
+    ),
+) );
+dwdc_assert( 'release válida', is_array( $parsed ) && $parsed['version'] === '0.2.0' );
+dwdc_assert( 'release sem zip', DWDC_Updater::parse_release( array( 'tag_name' => 'v0.2.0', 'assets' => array() ) ) === null );
 
 echo $failed === 0 ? "\nTodos os testes passaram.\n" : "\n{$failed} teste(s) falharam.\n";
 exit( $failed === 0 ? 0 : 1 );

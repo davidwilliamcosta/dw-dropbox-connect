@@ -28,6 +28,10 @@ O arquivo [`readme.txt`](readme.txt) é a descrição no formato do WordPress: i
 
 Quem tem `upload_files` usa a conta conectada. Quem tem `manage_options` altera a conexão.
 
+## Atualizações
+
+O WordPress consulta a última release deste repositório. Uma versão maior, com o arquivo `dw-dropbox-connect.zip` anexado, aparece em Plugins. Um commit na branch `main` não publica atualização.
+
 ## Licença
 
 [GPL-2.0-or-later](LICENSE).

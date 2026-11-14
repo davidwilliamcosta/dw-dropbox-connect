@@ -115,6 +115,10 @@ The app needs `files.content.write`, and the token has to be issued after that p
 
 Any user with `upload_files`. The connected account is shared by the site.
 
+= How do updates arrive? =
+
+WordPress asks GitHub for the latest release. A newer version appears on the Plugins screen when that release has a higher number and the `dw-dropbox-connect.zip` file attached. A commit on the repository does not publish an update. The site checks on its usual schedule, about every few hours, or when you open Dashboard → Updates.
+
 = What does uninstall remove? =
 
 The plugin options, its transients, and the thumbnail directory. Attachments already imported stay in the library.
@@ -131,6 +135,7 @@ The `.htaccess` file only applies on Apache. If the uploads directory can be rea
 * Send the library selection to the open Dropbox folder.
 * Dropbox button on the Media Library screen.
 * OAuth with a refresh token, encrypted secrets, and endpoints limited to users who can upload files.
+* Update checks read the latest GitHub release.
 
 == Upgrade Notice ==
 

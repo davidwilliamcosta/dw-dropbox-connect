@@ -11,6 +11,7 @@
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: dw-dropbox-connect
+ * Update URI: https://github.com/davidwilliamcosta/dw-dropbox-connect
  *
  * @package DW_Dropbox_Connect
  */
@@ -31,6 +32,7 @@ require_once DWDC_PATH . 'includes/class-dwdc-api.php';
 require_once DWDC_PATH . 'includes/class-dwdc-importer.php';
 require_once DWDC_PATH . 'includes/class-dwdc-exporter.php';
 require_once DWDC_PATH . 'includes/class-dwdc-rest.php';
+require_once DWDC_PATH . 'includes/class-dwdc-updater.php';
 require_once DWDC_PATH . 'includes/class-dwdc-plugin.php';
 
 register_activation_hook( __FILE__, array( 'DWDC_Plugin', 'activate' ) );

@@ -33,6 +33,7 @@ class DWDC_Plugin {
         $this->oauth = new DWDC_OAuth();
         $this->api   = new DWDC_Api( $this->oauth );
         new DWDC_Rest( $this->oauth );
+        new DWDC_Updater();
         $this->oauth->migrate_legacy_options();
 
         add_action( 'admin_menu', array( $this, 'admin_menu' ) );
