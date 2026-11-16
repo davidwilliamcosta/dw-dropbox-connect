@@ -22,6 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $dwdc_tabs = array(
     'conexao'     => __( 'Conexão', 'dw-dropbox-connect' ),
+    'galerias'    => __( 'Galerias', 'dw-dropbox-connect' ),
     'credenciais' => __( 'Credenciais', 'dw-dropbox-connect' ),
     'app'         => __( 'App do Dropbox', 'dw-dropbox-connect' ),
 );
@@ -37,7 +38,7 @@ if ( ! isset( $dwdc_tabs[ $dwdc_tab ] ) ) {
     <div class="dwdc-brand">
         <div class="dwdc-brand-main">
             <strong><?php esc_html_e( 'DW Dropbox Connect', 'dw-dropbox-connect' ); ?></strong>
-            <span class="dwdc-brand-description"><?php esc_html_e( 'Conta pessoal do Dropbox na aba do seletor de mídia, com importação para a Biblioteca.', 'dw-dropbox-connect' ); ?></span>
+            <span class="dwdc-brand-description"><?php esc_html_e( 'Conta pessoal do Dropbox no seletor de mídia e galerias de pastas do Dropbox no site.', 'dw-dropbox-connect' ); ?></span>
         </div>
         <span class="dwdc-brand-version"><?php
             /* translators: %s: plugin version number. */
@@ -88,6 +89,8 @@ if ( ! isset( $dwdc_tabs[ $dwdc_tab ] ) ) {
             </div>
             <p class="dwdc-callout"><?php esc_html_e( 'Quem pode enviar arquivos no WordPress consegue navegar e importar a árvore inteira da conta conectada.', 'dw-dropbox-connect' ); ?></p>
         </section>
+    <?php elseif ( $dwdc_tab === 'galerias' ) : ?>
+        <?php include DWDC_PATH . 'includes/views/feeds-tab.php'; ?>
     <?php elseif ( $dwdc_tab === 'credenciais' ) : ?>
         <section class="dwdc-card">
             <h2><?php esc_html_e( 'Credenciais', 'dw-dropbox-connect' ); ?></h2>

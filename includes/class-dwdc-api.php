@@ -114,6 +114,28 @@ class DWDC_Api {
         if ( is_file( $file ) && filesize( $file ) > 0 && ( time() - (int) filemtime( $file ) ) < DAY_IN_SECONDS ) {
             return $file;
         }
+        $body = $this->thumbnail_bytes( $path, 'w256h256' );
+        if ( is_wp_error( $body ) ) {
+            return $body;
+        }
+        if ( file_put_contents( $file, $body, LOCK_EX ) === false ) {
+            return new WP_Error( 'dwdc_thumbnail', __( 'Não foi possível guardar a miniatura.', 'dw-dropbox-connect' ), array( 'status' => 500 ) );
+        }
+        return $file;
+    }
+
+    /**
+     * Pede ao Dropbox uma miniatura JPEG no tamanho indicado.
+     *
+     * @param string $path
+     * @param string $size Um dos tamanhos aceitos pelo get_thumbnail_v2, como w640h480.
+     * @return string|WP_Error Bytes do JPEG.
+     */
+    public function thumbnail_bytes( $path, $size ) {
+        $allowed = array( 'w256h256', 'w640h480', 'w1024h768', 'w2048h1536' );
+        if ( ! in_array( $size, $allowed, true ) ) {
+            return new WP_Error( 'dwdc_thumbnail', __( 'Tamanho de miniatura inválido.', 'dw-dropbox-connect' ), array( 'status' => 400 ) );
+        }
         $token = $this->oauth->access_token();
         if ( is_wp_error( $token ) ) {
             return $token;
@@ -131,7 +153,7 @@ class DWDC_Api {
                                 'path' => $path,
                             ),
                             'format'   => 'jpeg',
-                            'size'     => 'w256h256',
+                            'size'     => $size,
                             'mode'     => 'bestfit',
                         )
                     ),
@@ -146,10 +168,68 @@ class DWDC_Api {
         if ( $status !== 200 || ! self::is_jpeg( $body ) ) {
             return new WP_Error( 'dwdc_thumbnail', __( 'O Dropbox não gerou miniatura para este arquivo.', 'dw-dropbox-connect' ), array( 'status' => 404 ) );
         }
-        if ( file_put_contents( $file, $body, LOCK_EX ) === false ) {
-            return new WP_Error( 'dwdc_thumbnail', __( 'Não foi possível guardar a miniatura.', 'dw-dropbox-connect' ), array( 'status' => 500 ) );
+        return $body;
+    }
+
+    /**
+     * Lista as imagens de uma pasta, com dimensões, para alimentar uma galeria.
+     * Percorre as páginas do Dropbox até um limite, para uma pasta enorme não travar a requisição.
+     *
+     * @param string $path      Caminho da pasta. A raiz não é aceita.
+     * @param bool   $recursive Inclui subpastas.
+     * @return array{items:array<int,array<string,mixed>>,truncated:bool}|WP_Error
+     */
+    public function list_images( $path, $recursive = false ) {
+        $path = DWDC_Normalizer::sanitize_path( $path );
+        if ( $path === null || $path === '' ) {
+            return new WP_Error( 'dwdc_path', __( 'O caminho do Dropbox é inválido.', 'dw-dropbox-connect' ), array( 'status' => 400 ) );
         }
-        return $file;
+        $items     = array();
+        $truncated = false;
+        $pages     = 0;
+        $data      = $this->rpc(
+            'files/list_folder',
+            array(
+                'path'                           => $path,
+                'recursive'                      => (bool) $recursive,
+                'include_deleted'                => false,
+                'include_media_info'             => true,
+                'include_non_downloadable_files' => false,
+                'limit'                          => 2000,
+            )
+        );
+        while ( true ) {
+            if ( is_wp_error( $data ) ) {
+                return $data;
+            }
+            $entries = isset( $data['entries'] ) && is_array( $data['entries'] ) ? $data['entries'] : array();
+            foreach ( $entries as $entry ) {
+                if ( ! is_array( $entry ) ) {
+                    continue;
+                }
+                $item = DWDC_Normalizer::image_item_from_metadata( $entry );
+                if ( $item ) {
+                    $items[ $item['id'] ] = $item;
+                }
+            }
+            ++$pages;
+            if ( empty( $data['has_more'] ) ) {
+                break;
+            }
+            $cursor = isset( $data['cursor'] ) ? (string) $data['cursor'] : '';
+            if ( $cursor === '' ) {
+                break;
+            }
+            if ( $pages >= 5 ) {
+                $truncated = true;
+                break;
+            }
+            $data = $this->rpc( 'files/list_folder/continue', array( 'cursor' => $cursor ) );
+        }
+        return array(
+            'items'     => array_values( $items ),
+            'truncated' => $truncated,
+        );
     }
 
     /**

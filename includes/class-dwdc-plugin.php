@@ -19,6 +19,9 @@ class DWDC_Plugin {
     /** @var DWDC_Api */
     private $api;
 
+    /** @var DWDC_Feeds_Admin */
+    private $feeds_admin;
+
     /**
      * @return self
      */
@@ -33,6 +36,9 @@ class DWDC_Plugin {
         $this->oauth = new DWDC_OAuth();
         $this->api   = new DWDC_Api( $this->oauth );
         new DWDC_Rest( $this->oauth );
+        $feeds             = new DWDC_Feeds( $this->api );
+        $this->feeds_admin = new DWDC_Feeds_Admin( $feeds, $this->oauth );
+        new DWDC_Gallery( $feeds, $this->oauth );
         new DWDC_Updater();
         $this->oauth->migrate_legacy_options();
 
@@ -100,6 +106,7 @@ class DWDC_Plugin {
         $ready         = true === $credentials;
         $ready_error   = is_wp_error( $credentials ) ? $credentials->get_error_message() : '';
         $connect_url   = wp_nonce_url( admin_url( 'admin-post.php?action=dwdc_connect' ), 'dwdc_connect' );
+        $dwdc_feeds_admin = $this->feeds_admin;
         include DWDC_PATH . 'includes/views/settings-page.php';
     }
 
@@ -181,6 +188,28 @@ class DWDC_Plugin {
         }
         wp_enqueue_style( 'dwdc-admin', DWDC_URL . 'assets/css/admin.css', array(), DWDC_VERSION );
         wp_enqueue_script( 'dwdc-admin', DWDC_URL . 'assets/js/admin.js', array(), DWDC_VERSION, true );
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab selector.
+        $tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+        if ( $tab === 'galerias' ) {
+            wp_enqueue_script( 'dwdc-feeds-admin', DWDC_URL . 'assets/js/feeds-admin.js', array( 'wp-api-fetch' ), DWDC_VERSION, true );
+            wp_localize_script(
+                'dwdc-feeds-admin',
+                'dwdcFeeds',
+                array(
+                    'i18n' => array(
+                        'root'      => __( 'Dropbox', 'dw-dropbox-connect' ),
+                        'use'       => __( 'Usar esta pasta', 'dw-dropbox-connect' ),
+                        'more'      => __( 'Carregar mais', 'dw-dropbox-connect' ),
+                        'loading'   => __( 'Carregando…', 'dw-dropbox-connect' ),
+                        'failed'    => __( 'Não foi possível carregar o Dropbox.', 'dw-dropbox-connect' ),
+                        'noFolders' => __( 'Nenhuma subpasta.', 'dw-dropbox-connect' ),
+                        /* translators: %d: number of images, replaced by the script. */
+                        'images'    => __( '%d imagens nesta pasta.', 'dw-dropbox-connect' ),
+                        'partial'   => __( 'Há mais itens a carregar.', 'dw-dropbox-connect' ),
+                    ),
+                )
+            );
+        }
     }
 
     public function enqueue_media() {
@@ -274,7 +303,7 @@ class DWDC_Plugin {
             MINUTE_IN_SECONDS
         );
         $url = admin_url( 'options-general.php?page=dw-dropbox-connect' );
-        if ( in_array( $tab, array( 'conexao', 'credenciais', 'app' ), true ) ) {
+        if ( in_array( $tab, array( 'conexao', 'galerias', 'credenciais', 'app' ), true ) ) {
             $url = add_query_arg( 'tab', $tab, $url );
         }
         wp_safe_redirect( $url );

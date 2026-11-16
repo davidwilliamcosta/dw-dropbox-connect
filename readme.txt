@@ -1,14 +1,14 @@
 === DW Dropbox Connect ===
 Contributors: davidwilliamdacosta
-Tags: dropbox, media library, oauth
+Tags: dropbox, gallery, media library, oauth
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Connects a personal Dropbox account to the media modal, imports native attachments, and sends the selection back.
+Connects a personal Dropbox account to the media modal and publishes galleries of Dropbox folders on the site, kept up to date as the folder changes.
 
 == Description ==
 
@@ -19,6 +19,28 @@ Import stores a copy in the Media Library with `media_handle_sideload`. Gutenber
 Send works in the other direction: the Media Library selection is copied into the Dropbox folder that is open. A name that already exists at the destination gets a suffix. The plugin does not replace, move, or delete anything in Dropbox.
 
 No credentials are bundled. The App key and App secret come from the settings screen or from `DWDC_APP_KEY` and `DWDC_APP_SECRET` in `wp-config.php`.
+
+= Galleries =
+
+A gallery shows the images of one Dropbox folder on the site, in the style of a social feed. Open Settings → Dropbox → Galleries, create a gallery, pick the folder, and place it with the Dropbox Gallery block or the shortcode `[dw_dropbox_gallery id="abcd1234"]`. Elementor and other builders can use the shortcode.
+
+The gallery follows the folder. An image added, replaced, or removed in Dropbox changes on the site without touching the Media Library. Visitors never talk to Dropbox: the site downloads a resized JPEG once, keeps it in `wp-content/uploads/dw-dropbox-connect-gallery/`, and serves it from there.
+
+* Grid or masonry layout, columns for desktop, tablet, and phone, and the gap between images.
+* Square thumbnails or the original proportion.
+* A first batch of images with a Load more button.
+* Lightbox with keyboard, swipe, and focus handling.
+* Optional file name as caption. Camera names such as IMG_4821 are never used as alt text.
+* Order by upload date or file name, with an optional limit of up to 500 images.
+* Optional subfolders.
+
+How updates arrive:
+
+1. WP-Cron checks each gallery at the interval chosen for it, from every 5 minutes to once a day.
+2. Optional webhook: register `wp-json/dwdc/v1/webhook` under Webhooks in the Dropbox App Console. Dropbox then notifies the site when the account changes, and galleries refresh within seconds. The request is accepted only with a valid `X-Dropbox-Signature`.
+3. A page served by a page cache asks the site whether the gallery changed and swaps the list in place, so cached pages do not show old images. The `dwdc_feed_changed` action fires when a gallery changes, for cache plugins that prefer to purge.
+
+A gallery only exposes the folder it was set up with. The public endpoints accept a gallery ID and a file ID that is already in the gallery. They never accept a Dropbox path from the visitor. Anyone with `manage_options` creates galleries, and the images of a gallery are public by design.
 
 = What the Dropbox tab does =
 
@@ -39,6 +61,8 @@ The plugin talks only to the Dropbox API, and only after an administrator connec
 * `https://www.dropbox.com` for the OAuth authorization.
 * `https://api.dropbox.com` for metadata, search, and the token exchange.
 * `https://content.dropboxapi.com` for download, thumbnails, and upload.
+
+Gallery visitors are never sent to these addresses. The server requests the Dropbox API, and the visitor's browser only loads files from the site.
 
 Nothing is sent on activation. There is no telemetry, advertising, or script loaded from outside the site. CSS and JavaScript ship inside the plugin.
 
@@ -62,6 +86,8 @@ The connection belongs to the site, not to each user. Anyone with the `upload_fi
 * Transients for listings, search, request limits, and the one-time OAuth state.
 * JPEG thumbnails in `wp-content/uploads/dw-dropbox-connect-cache/`, named with an HMAC. On Apache, an `.htaccess` file denies direct access.
 * Imported attachments, like any other Media Library file.
+* Gallery settings (option `dwdc_feeds`) and, per gallery, the list of images last read from Dropbox (options `dwdc_feed_*`).
+* Gallery images as JPEG in `wp-content/uploads/dw-dropbox-connect-gallery/`, one folder per gallery, named with an HMAC. These files are public, because the gallery is public.
 
 Changing the salts makes the secrets unreadable and requires a new connection. Tokens stored by an older build, without the HMAC, can still be read and are rewritten in the new format the next time they are saved.
 
@@ -121,13 +147,27 @@ WordPress asks GitHub for the latest release. A newer version appears on the Plu
 
 = What does uninstall remove? =
 
-The plugin options, its transients, and the thumbnail directory. Attachments already imported stay in the library.
+The plugin options, the gallery settings and snapshots, its transients, its scheduled tasks, and both cache directories. Attachments already imported stay in the library.
+
+= Can a gallery show a private folder? =
+
+The images of a gallery are public. Choose only folders meant for the site. The plugin never exposes anything outside the folder chosen for the gallery.
+
+= A new photo did not appear on the site. =
+
+Open Settings → Dropbox → Galleries and use Refresh now to confirm the connection works. Without the webhook, the site waits for the interval of the gallery, and WP-Cron only runs when the site receives visits (or when a system cron calls `wp-cron.php`). Only jpg, png, gif, webp, tiff, and bmp files are listed. Other formats, such as HEIC, are skipped.
 
 = Is the thumbnail cache public on Nginx? =
 
 The `.htaccess` file only applies on Apache. If the uploads directory can be read by URL, block `dw-dropbox-connect-cache` on the server.
 
 == Changelog ==
+
+= 0.2.0 =
+* Galleries: show the images of a Dropbox folder on the site with a block or shortcode, in grid or masonry layout, with lightbox and Load more.
+* Galleries follow the folder: WP-Cron at a chosen interval, optional Dropbox webhook for near instant updates, and a client side check that keeps cached pages current.
+* Resized images are cached on the site, so visitors never reach Dropbox.
+* Folder picker on the new Galleries tab.
 
 = 0.1.0 =
 * First public release.
@@ -139,9 +179,12 @@ The `.htaccess` file only applies on Apache. If the uploads directory can be rea
 
 == Upgrade Notice ==
 
+= 0.2.0 =
+Adds Dropbox galleries. No new Dropbox permission is needed.
+
 = 0.1.0 =
 First public release. If the Dropbox app was connected before `files.content.write` was enabled, disconnect and connect again so sending works.
 
 == Privacy ==
 
-The plugin does not collect data for its author. Requests to Dropbox carry the connected account token and the path, name, or contents of the file the user chose to list, search, import, or send. The Dropbox display name is stored on the site for the settings screen. See also the Dropbox privacy policy.
+The plugin does not collect data for its author. Gallery visitors send nothing to Dropbox and the plugin sets no cookie for them. Requests to Dropbox carry the connected account token and the path, name, or contents of the file the user chose to list, search, import, or send. The Dropbox display name is stored on the site for the settings screen. See also the Dropbox privacy policy.
