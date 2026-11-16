@@ -3,7 +3,7 @@
  * Plugin Name: DW Dropbox Connect
  * Plugin URI: https://github.com/davidwilliamcosta/dw-dropbox-connect
  * Description: Conecta uma conta pessoal do Dropbox ao seletor de mídia e publica galerias de pastas do Dropbox no site, que acompanham as mudanças feitas na pasta.
- * Version: 0.2.0
+ * Version: 0.2.1
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: David William da Costa
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'DWDC_VERSION', '0.2.0' );
+define( 'DWDC_VERSION', '0.2.1' );
 define( 'DWDC_FILE', __FILE__ );
 define( 'DWDC_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DWDC_URL', plugin_dir_url( __FILE__ ) );

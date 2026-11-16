@@ -106,14 +106,33 @@
             return;
         }
         state.index = (index + total) % total;
+        var token = String(state.index) + ':' + String(Date.now());
+        state.token = token;
         var link = state.links[state.index];
         var thumb = link.querySelector('img');
         var img = lightbox.img;
-        img.classList.remove('is-ready');
-        img.onload = function () { img.classList.add('is-ready'); };
-        img.onerror = function () { img.classList.add('is-ready'); };
+        var full = link.href;
+        var preview = thumb ? (thumb.currentSrc || thumb.getAttribute('src') || '') : '';
         img.alt = thumb ? thumb.getAttribute('alt') || '' : '';
-        img.src = link.href;
+        img.onload = null;
+        img.onerror = null;
+        if (preview && preview !== full) {
+            img.src = preview;
+            img.classList.add('is-ready');
+            var loader = new Image();
+            loader.onload = function () {
+                if (state.token !== token) {
+                    return;
+                }
+                img.src = full;
+            };
+            loader.src = full;
+        } else {
+            img.classList.remove('is-ready');
+            img.onload = function () { img.classList.add('is-ready'); };
+            img.onerror = function () { img.classList.add('is-ready'); };
+            img.src = full;
+        }
         lightbox.caption.textContent = link.getAttribute('data-caption') || '';
         var template = state.i18n.count || '%1 / %2';
         lightbox.count.textContent = template.replace('%1', String(state.index + 1)).replace('%2', String(total));

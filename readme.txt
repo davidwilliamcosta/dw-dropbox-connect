@@ -4,7 +4,7 @@ Tags: dropbox, gallery, media library, oauth
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -163,6 +163,10 @@ The `.htaccess` file only applies on Apache. If the uploads directory can be rea
 
 == Changelog ==
 
+= 0.2.1 =
+* Lightbox controls stay fixed on the screen when the theme restyles buttons.
+* The enlarged photo appears immediately from the thumbnail already on the page, then swaps to the larger file.
+
 = 0.2.0 =
 * Galleries: show the images of a Dropbox folder on the site with a block or shortcode, in grid or masonry layout, with lightbox and Load more.
 * Galleries follow the folder: WP-Cron at a chosen interval, optional Dropbox webhook for near instant updates, and a client side check that keeps cached pages current.
@@ -178,6 +182,9 @@ The `.htaccess` file only applies on Apache. If the uploads directory can be rea
 * Update checks read the latest GitHub release.
 
 == Upgrade Notice ==
+
+= 0.2.1 =
+Fixes the lightbox controls on themes that restyle buttons, and shows the enlarged photo without waiting for the larger file.
 
 = 0.2.0 =
 Adds Dropbox galleries. No new Dropbox permission is needed.
